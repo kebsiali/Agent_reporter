@@ -1,5 +1,19 @@
 # Reporter Agent Master Plan
 
+## Spec Update Notice (2026-03-08)
+
+This master plan is superseded for UX direction by:
+
+1. `docs/GUI_PRODUCT_SPEC.md`
+
+Key update:
+
+1. GUI is mandatory as primary interface.
+2. Drag/drop + `Add PPT` import is mandatory.
+3. Chat must be inside GUI.
+4. Multimodal inputs (PDF/plots/data/tables/equations) are mandatory.
+5. Company template style fidelity is mandatory.
+
 ## 1. Vision and Outcome
 
 Build a fully local, GPU-accelerated "reporter agent" that:
@@ -437,4 +451,3 @@ The plan choices above are aligned with current official documentation:
 8. python-pptx docs: https://python-pptx.readthedocs.io/en/stable/index.html
 9. Docling docs: https://docling-project.github.io/docling/
 10. pytest docs: https://docs.pytest.org/
-

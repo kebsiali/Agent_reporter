@@ -1,5 +1,8 @@
 # Reporter Agent (Local-Only)
 
+Spec note:
+- GUI-first future scope is defined in `docs/GUI_PRODUCT_SPEC.md`.
+
 A local Python CLI that:
 - Reads historical `.pptx` reports
 - Builds a reusable knowledge base from slide text

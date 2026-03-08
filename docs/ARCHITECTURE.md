@@ -1,5 +1,13 @@
 # Architecture (Phase 0 Baseline)
 
+## Direction Update
+
+Primary product direction is now GUI-first per:
+
+1. `docs/GUI_PRODUCT_SPEC.md`
+
+CLI remains available for development, automation, and diagnostics.
+
 ## Runtime Layers
 
 1. `ingestion`: parse PPTX and build knowledge base records.
