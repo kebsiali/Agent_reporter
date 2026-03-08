@@ -4,8 +4,6 @@ import re
 from collections import Counter
 from pathlib import Path
 
-from pptx import Presentation
-
 from .models import SlideRecord
 
 
@@ -83,6 +81,13 @@ def extract_key_phrases(text: str, top_k: int = 8) -> list[str]:
 
 
 def extract_slide_records(pptx_path: Path) -> list[SlideRecord]:
+    try:
+        from pptx import Presentation
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "python-pptx is required for PPT ingestion. Install with: python -m pip install python-pptx"
+        ) from exc
+
     prs = Presentation(str(pptx_path))
     slide_records: list[SlideRecord] = []
     for idx, slide in enumerate(prs.slides, start=1):
@@ -100,4 +105,3 @@ def extract_slide_records(pptx_path: Path) -> list[SlideRecord]:
             )
         )
     return slide_records
-

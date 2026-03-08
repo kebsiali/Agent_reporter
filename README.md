@@ -11,6 +11,7 @@ A local Python CLI that:
 
 ```powershell
 python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
 ```
 
 ## 2) Index your existing reports
@@ -30,6 +31,12 @@ python -m reporter_agent plan `
   --out-dir output
 ```
 
+Optional logging:
+
+```powershell
+python -m reporter_agent --log-level DEBUG plan --kb data\knowledge_base.json --task-name "X" --task-desc "Y"
+```
+
 Output files:
 - `output/<task>.md` -> human-editable report blueprint
 - `output/<task>.json` -> structured plan for automation
@@ -47,3 +54,9 @@ Output files:
 - Everything runs locally. No cloud calls.
 - Auto-filled text is based on historical slide text similarity only.
 - Replace all `[[FILL: ...]]` placeholders before sharing.
+
+## Test
+
+```powershell
+pytest -q
+```

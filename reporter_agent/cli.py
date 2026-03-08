@@ -3,15 +3,23 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from .config import load_config
 from .exporter import export_plan_json, export_plan_markdown, export_plan_pptx
 from .indexer import build_knowledge_base, load_knowledge_base, save_knowledge_base
+from .logging_utils import configure_logging
 from .planner import build_report_plan
 
 
 def build_parser() -> argparse.ArgumentParser:
+    cfg = load_config()
     parser = argparse.ArgumentParser(
         prog="reporter-agent",
         description="Local-first PPT report planner using historical slide content.",
+    )
+    parser.add_argument(
+        "--log-level",
+        default=cfg.log_level,
+        help="Logging level (DEBUG, INFO, WARNING, ERROR)",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -20,7 +28,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_index.add_argument(
         "--kb-out",
         type=Path,
-        default=Path("data/knowledge_base.json"),
+        default=cfg.data_dir / "knowledge_base.json",
         help="Output KB JSON path",
     )
 
@@ -39,7 +47,7 @@ def build_parser() -> argparse.ArgumentParser:
         ],
         help="Template type",
     )
-    p_plan.add_argument("--out-dir", type=Path, default=Path("output"), help="Output folder")
+    p_plan.add_argument("--out-dir", type=Path, default=cfg.output_dir, help="Output folder")
     p_plan.add_argument(
         "--skip-pptx",
         action="store_true",
@@ -92,6 +100,7 @@ def cmd_plan(
 
 def main() -> int:
     args = build_parser().parse_args()
+    configure_logging(args.log_level)
     if args.command == "index":
         return cmd_index(args.source_dir, args.kb_out)
     if args.command == "plan":
@@ -108,4 +117,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

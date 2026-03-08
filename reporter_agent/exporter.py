@@ -3,9 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from pptx import Presentation
-from pptx.util import Inches
-
 from .models import ReportPlan
 
 
@@ -55,6 +52,14 @@ def export_plan_markdown(plan: ReportPlan, output_path: Path) -> None:
 
 
 def export_plan_pptx(plan: ReportPlan, output_path: Path) -> None:
+    try:
+        from pptx import Presentation
+        from pptx.util import Inches
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "python-pptx is required for PPT export. Install with: python -m pip install python-pptx"
+        ) from exc
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     prs = Presentation()
     for planned in plan.slides:
@@ -94,4 +99,3 @@ def export_plan_pptx(plan: ReportPlan, output_path: Path) -> None:
         )
 
     prs.save(str(output_path))
-
