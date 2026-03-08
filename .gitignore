@@ -4,3 +4,6 @@ __pycache__/
 pytest-cache-files-*/
 .pytest_tmp/
 data/test_tmp/
+data/gui_projects/
+logs/
+dist/
