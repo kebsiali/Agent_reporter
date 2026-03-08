@@ -12,7 +12,13 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from ..child_memory import CURRENT_SCHEMA_VERSION, export_child_bundle, import_child_bundle
+from ..child_memory import (
+    CURRENT_SCHEMA_VERSION,
+    apply_child_merge,
+    export_child_bundle,
+    import_child_bundle,
+    preview_child_merge,
+)
 from ..chat import handle_chat
 from ..exporter import export_plan_json, export_plan_markdown, export_plan_pptx
 from ..indexer import (
@@ -67,6 +73,16 @@ class ChildCloneRequest(BaseModel):
     source_child_id: str = Field(min_length=1)
     target_child_id: str = Field(min_length=1)
     target_child_name: str = Field(min_length=1)
+
+
+class ChildImportRouteRequest(BaseModel):
+    target_child_id: str = Field(min_length=1)
+
+
+class ChildMergeRequest(BaseModel):
+    source_child_id: str = Field(min_length=1)
+    target_child_id: str = Field(min_length=1)
+    strategy: str = "union_dedup"
 
 
 def _validate_project_id(project_id: str) -> str:
@@ -267,6 +283,73 @@ def create_app(base_data_dir: Path = Path("data")) -> FastAPI:
         temp_zip.unlink(missing_ok=True)
         return result
 
+    @app.post("/api/children/import-as-new")
+    async def import_as_new(
+        child_id: str,
+        child_name: str,
+        file: UploadFile = File(...),
+    ) -> dict[str, Any]:
+        reg = _load_registry(base_data_dir)
+        created = create_child(reg, child_id, child_name, origin="imported_bundle")
+        _save_registry(base_data_dir, reg)
+
+        paths = _project_paths(base_data_dir, child_id)
+        paths["child_dir"].mkdir(parents=True, exist_ok=True)
+        payload = await file.read()
+        temp_zip = paths["child_dir"] / "import_bundle.zip"
+        temp_zip.write_bytes(payload)
+        result = import_child_bundle(
+            bundle_zip=temp_zip,
+            project_root=paths["root"],
+            snapshots_dir=paths["child_snapshots"],
+        )
+        temp_zip.unlink(missing_ok=True)
+        return {"created": created, "import_result": result}
+
+    @app.post("/api/children/import-into")
+    async def import_into(
+        target_child_id: str,
+        file: UploadFile = File(...),
+    ) -> dict[str, Any]:
+        _validate_project_id(target_child_id)
+        reg = _load_registry(base_data_dir)
+        if not find_child(reg, target_child_id):
+            raise HTTPException(status_code=404, detail="Target child not found.")
+        paths = _project_paths(base_data_dir, target_child_id)
+        paths["child_dir"].mkdir(parents=True, exist_ok=True)
+        payload = await file.read()
+        temp_zip = paths["child_dir"] / "import_bundle.zip"
+        temp_zip.write_bytes(payload)
+        result = import_child_bundle(
+            bundle_zip=temp_zip,
+            project_root=paths["root"],
+            snapshots_dir=paths["child_snapshots"],
+        )
+        temp_zip.unlink(missing_ok=True)
+        return {"target_child_id": target_child_id, "import_result": result}
+
+    @app.post("/api/children/merge-preview")
+    def merge_preview(payload: ChildMergeRequest) -> dict[str, Any]:
+        src = _project_paths(base_data_dir, payload.source_child_id)["root"]
+        tgt = _project_paths(base_data_dir, payload.target_child_id)["root"]
+        if not src.exists() or not tgt.exists():
+            raise HTTPException(status_code=404, detail="Source or target child root not found.")
+        preview = preview_child_merge(src, tgt)
+        return {"source_child_id": payload.source_child_id, "target_child_id": payload.target_child_id, "preview": preview}
+
+    @app.post("/api/children/merge-apply")
+    def merge_apply(payload: ChildMergeRequest) -> dict[str, Any]:
+        src = _project_paths(base_data_dir, payload.source_child_id)["root"]
+        tgt = _project_paths(base_data_dir, payload.target_child_id)["root"]
+        if not src.exists() or not tgt.exists():
+            raise HTTPException(status_code=404, detail="Source or target child root not found.")
+        report = apply_child_merge(src, tgt, strategy=payload.strategy)
+        return {
+            "source_child_id": payload.source_child_id,
+            "target_child_id": payload.target_child_id,
+            "report": report,
+        }
+
     @app.post("/api/projects/{project_id}/upload-template")
     async def upload_template(project_id: str, file: UploadFile = File(...)) -> dict[str, Any]:
         child_id = _resolve_child_id(base_data_dir, project_id)
@@ -441,4 +524,3 @@ def run_gui(host: str = "127.0.0.1", port: int = 8000, reload: bool = False) -> 
     import uvicorn
 
     uvicorn.run("reporter_agent.gui.app:create_app", factory=True, host=host, port=port, reload=reload)
-

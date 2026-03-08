@@ -19,6 +19,8 @@ Open:
 GUI supports:
 - child selector with default `MASTER_CHILD`
 - create/clone/archive child workflows
+- import bundle as new child or into existing child
+- merge preview/apply between children with strategy selection
 - drag/drop PPT ingestion
 - `Add PPT` button
 - `Show Ingested PPTs` button/panel

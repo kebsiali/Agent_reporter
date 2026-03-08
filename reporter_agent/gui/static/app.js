@@ -193,6 +193,51 @@ document.getElementById("childImportBtn").addEventListener("click", async () => 
   setText("childResult", JSON.stringify(data, null, 2));
 });
 
+document.getElementById("childImportAsNewBtn").addEventListener("click", async () => {
+  const input = document.getElementById("childImportFile");
+  const childId = document.getElementById("importNewChildId").value.trim();
+  const childName = document.getElementById("importNewChildName").value.trim();
+  if (!input.files.length || !childId || !childName) return;
+  const form = new FormData();
+  form.append("file", input.files[0]);
+  const res = await fetch(`/api/children/import-as-new?child_id=${encodeURIComponent(childId)}&child_name=${encodeURIComponent(childName)}`, {
+    method: "POST",
+    body: form
+  });
+  const data = await res.json();
+  setText("childResult", JSON.stringify(data, null, 2));
+  await loadChildren();
+});
+
+document.getElementById("mergePreviewBtn").addEventListener("click", async () => {
+  const source = document.getElementById("mergeSourceId").value.trim();
+  const target = document.getElementById("mergeTargetId").value.trim();
+  const strategy = document.getElementById("mergeStrategy").value;
+  if (!source || !target) return;
+  const res = await fetch("/api/children/merge-preview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ source_child_id: source, target_child_id: target, strategy })
+  });
+  const data = await res.json();
+  setText("childResult", JSON.stringify(data, null, 2));
+});
+
+document.getElementById("mergeApplyBtn").addEventListener("click", async () => {
+  const source = document.getElementById("mergeSourceId").value.trim();
+  const target = document.getElementById("mergeTargetId").value.trim();
+  const strategy = document.getElementById("mergeStrategy").value;
+  if (!source || !target) return;
+  const res = await fetch("/api/children/merge-apply", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ source_child_id: source, target_child_id: target, strategy })
+  });
+  const data = await res.json();
+  setText("childResult", JSON.stringify(data, null, 2));
+  await loadChildren();
+});
+
 const dropZone = document.getElementById("dropZone");
 dropZone.addEventListener("dragover", (e) => {
   e.preventDefault();
@@ -213,4 +258,3 @@ async function boot() {
 }
 
 boot();
-

@@ -77,6 +77,19 @@
       <button id="childExportBtn">Export CHILD</button>
       <input id="childImportFile" type="file" accept=".zip" />
       <button id="childImportBtn">Import CHILD</button>
+      <input id="importNewChildId" placeholder="import as new child id" />
+      <input id="importNewChildName" placeholder="import as new child name" />
+      <button id="childImportAsNewBtn">Import as New Child</button>
+      <input id="mergeSourceId" placeholder="merge source child id" />
+      <input id="mergeTargetId" placeholder="merge target child id" />
+      <select id="mergeStrategy">
+        <option value="union_dedup">union_dedup</option>
+        <option value="quality_weighted">quality_weighted</option>
+        <option value="recency_weighted">recency_weighted</option>
+        <option value="master_priority">master_priority</option>
+      </select>
+      <button id="mergePreviewBtn">Merge Preview</button>
+      <button id="mergeApplyBtn">Merge Apply</button>
       <pre id="childResult"></pre>
     </section>
   </main>
