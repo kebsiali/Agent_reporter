@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import re
-from collections import defaultdict
 from datetime import datetime, timezone
+from pathlib import Path
 
 from .models import PlannedSlide, ReportKnowledgeBase, ReportPlan, SlideRecord
+from .retrieval import semantic_search
 
 
 DEFAULT_STRUCTURES: dict[str, list[tuple[str, str]]] = {
@@ -109,6 +110,12 @@ def _synthesize_text(examples: list[SlideRecord]) -> str:
     return "\n".join(snippets[:2]).strip()
 
 
+def _synthesize_from_semantic_hits(hit_lines: list[str]) -> str:
+    if not hit_lines:
+        return ""
+    return "\n".join(hit_lines[:2]).strip()
+
+
 def _infer_placeholders(section: str) -> list[str]:
     placeholders = {
         "objective": [
@@ -143,23 +150,91 @@ def _infer_placeholders(section: str) -> list[str]:
     return placeholders.get(section, ["[[FILL: content]]"])
 
 
+def _confidence_label(score: float) -> str:
+    if score >= 0.75:
+        return "high"
+    if score >= 0.55:
+        return "medium"
+    return "low"
+
+
+def _keyword_confidence(task_tokens: set[str], examples: list[SlideRecord]) -> float:
+    if not examples:
+        return 0.0
+    best = max(_score_match(task_tokens, s) for s in examples)
+    return min(1.0, best / 8.0)
+
+
+def _detect_evidence_gaps(section: str, text: str, task_description: str) -> list[str]:
+    haystack = f"{text}\n{task_description}".lower()
+    gaps: list[str] = []
+    has_number = bool(re.search(r"\b\d+(\.\d+)?%?\b", haystack))
+
+    if section in {"results", "calibration", "sensitivity"} and not has_number:
+        gaps.append("No quantitative values detected.")
+    if section == "results" and "baseline" not in haystack and "vs" not in haystack:
+        gaps.append("Missing baseline-versus-variant comparison.")
+    if section == "methodology" and "assumption" not in haystack:
+        gaps.append("Assumptions are not explicitly stated.")
+    if section == "calibration" and "dataset" not in haystack and "reference" not in haystack:
+        gaps.append("Calibration reference dataset is not identified.")
+    if section == "sensitivity" and "range" not in haystack and "sweep" not in haystack:
+        gaps.append("Parameter range/sweep definition is missing.")
+    if section == "conclusion" and "recommend" not in haystack:
+        gaps.append("Recommendation statement is missing.")
+
+    return gaps
+
+
+def _gap_guidance(gaps: list[str]) -> list[str]:
+    mapping = {
+        "No quantitative values detected.": "Pull numeric KPIs from latest run outputs and add units.",
+        "Missing baseline-versus-variant comparison.": "Add baseline case and at least one variant with delta.",
+        "Assumptions are not explicitly stated.": "Copy assumptions from solver config and scope notes.",
+        "Calibration reference dataset is not identified.": "Add dataset/source ID and time window used for fitting.",
+        "Parameter range/sweep definition is missing.": "List min/max/step for each varied parameter.",
+        "Recommendation statement is missing.": "State one explicit decision recommendation with rationale.",
+    }
+    return [mapping[g] for g in gaps if g in mapping]
+
+
 def build_report_plan(
     kb: ReportKnowledgeBase,
     task_name: str,
     task_description: str,
     report_type: str,
+    semantic_index_dir: Path | None = None,
+    semantic_top_k: int = 4,
+    enable_semantic: bool = True,
 ) -> ReportPlan:
     structure = _get_structure(report_type)
     task_tokens = _tokenize(f"{task_name} {task_description}")
 
     slides: list[PlannedSlide] = []
-    coverage_counter = defaultdict(int)
 
     for i, (section, default_title) in enumerate(structure, start=1):
         examples = _top_examples(kb, task_tokens, section)
-        autofill_text = _synthesize_text(examples)
+        keyword_autofill = _synthesize_text(examples)
         source_examples = [f"{e.source_file}#slide-{e.slide_index}" for e in examples]
-        coverage_counter[section] += len(examples)
+        confidence = _keyword_confidence(task_tokens, examples)
+
+        semantic_lines: list[str] = []
+        if enable_semantic and semantic_index_dir is not None:
+            try:
+                query = f"{task_name}. {task_description}. section: {section}"
+                hits = semantic_search(query=query, index_dir=semantic_index_dir, top_k=semantic_top_k)
+                for h in hits:
+                    if h.section == section or h.section == "general":
+                        semantic_lines.append(h.excerpt)
+                        source_examples.append(f"{h.source_file}#slide-{h.slide_index}")
+                if hits:
+                    confidence = max(confidence, max(0.0, min(1.0, (hits[0].score + 1.0) / 2.0)))
+            except Exception:  # noqa: BLE001
+                # Graceful fallback: planning continues with keyword mode only.
+                pass
+
+        semantic_autofill = _synthesize_from_semantic_hits(semantic_lines)
+        autofill_text = semantic_autofill or keyword_autofill
 
         missing_guidance = GENERIC_MISSING_INFO_GUIDANCE.get(
             section, GENERIC_MISSING_INFO_GUIDANCE["general"]
@@ -168,6 +243,16 @@ def build_report_plan(
 
         if not autofill_text:
             autofill_text = "[[AUTO-FILL-UNAVAILABLE: no close historical example found]]"
+            confidence = 0.0
+
+        evidence_gaps = _detect_evidence_gaps(section, autofill_text, task_description)
+        if evidence_gaps:
+            missing_guidance = missing_guidance + _gap_guidance(evidence_gaps)
+            if "No quantitative values detected." in evidence_gaps:
+                if "[[FILL: key result numbers]]" not in placeholders:
+                    placeholders.append("[[FILL: key result numbers]]")
+            if "Missing baseline-versus-variant comparison." in evidence_gaps:
+                placeholders.append("[[FILL: baseline vs variant values]]")
 
         slides.append(
             PlannedSlide(
@@ -175,16 +260,19 @@ def build_report_plan(
                 title=default_title,
                 section=section,
                 objective=f"Deliver the {section.replace('_', ' ')} part of the report.",
+                confidence=round(confidence, 3),
+                confidence_label=_confidence_label(confidence),
                 autofill_text=autofill_text,
                 placeholders=placeholders,
+                evidence_gaps=evidence_gaps,
                 missing_info_guidance=missing_guidance,
-                source_examples=source_examples,
+                source_examples=sorted(set(source_examples)),
             )
         )
 
     assumptions = [
         f"Report type '{report_type}' mapped to default structure with {len(structure)} slides.",
-        "Auto-fill content is derived only from local indexed PPT text.",
+        "Auto-fill content is derived only from local indexed PPT text and optional local semantic retrieval.",
         "Placeholders must be replaced with project-specific evidence before sharing.",
     ]
 
@@ -195,4 +283,3 @@ def build_report_plan(
         assumptions=assumptions,
         slides=slides,
     )
-

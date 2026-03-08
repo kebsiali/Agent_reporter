@@ -27,10 +27,18 @@ def export_plan_markdown(plan: ReportPlan, output_path: Path) -> None:
     for s in plan.slides:
         lines.append(f"## Slide {s.slide_number}: {s.title} ({s.section})")
         lines.append(f"Objective: {s.objective}")
+        lines.append(f"Confidence: `{s.confidence_label}` ({s.confidence:.3f})")
         lines.append("")
         lines.append("Auto-fill draft:")
         lines.append("")
         lines.append(s.autofill_text)
+        lines.append("")
+        lines.append("Evidence gaps:")
+        if s.evidence_gaps:
+            for gap in s.evidence_gaps:
+                lines.append(f"- {gap}")
+        else:
+            lines.append("- None")
         lines.append("")
         lines.append("Placeholders:")
         for p in s.placeholders:
@@ -74,6 +82,10 @@ def export_plan_pptx(plan: ReportPlan, output_path: Path) -> None:
         p.level = 0
 
         p = body.add_paragraph()
+        p.text = f"Confidence: {planned.confidence_label} ({planned.confidence:.3f})"
+        p.level = 0
+
+        p = body.add_paragraph()
         p.text = "Draft:"
         p.level = 0
 
@@ -87,6 +99,19 @@ def export_plan_pptx(plan: ReportPlan, output_path: Path) -> None:
         for placeholder in planned.placeholders:
             p = body.add_paragraph()
             p.text = placeholder
+            p.level = 1
+
+        p = body.add_paragraph()
+        p.text = "Evidence gaps:"
+        p.level = 0
+        if planned.evidence_gaps:
+            for gap in planned.evidence_gaps:
+                p = body.add_paragraph()
+                p.text = gap
+                p.level = 1
+        else:
+            p = body.add_paragraph()
+            p.text = "None"
             p.level = 1
 
         left = Inches(0.5)

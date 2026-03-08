@@ -66,6 +66,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_plan.add_argument("--out-dir", type=Path, default=cfg.output_dir, help="Output folder")
     p_plan.add_argument(
+        "--index-dir",
+        type=Path,
+        default=cfg.data_dir / "index",
+        help="Directory containing semantic index files for planning",
+    )
+    p_plan.add_argument(
+        "--semantic-top-k",
+        type=int,
+        default=4,
+        help="Number of semantic matches considered per section",
+    )
+    p_plan.add_argument(
+        "--no-semantic",
+        action="store_true",
+        help="Disable semantic retrieval during plan generation",
+    )
+    p_plan.add_argument(
         "--skip-pptx",
         action="store_true",
         help="Skip draft pptx export",
@@ -110,6 +127,9 @@ def cmd_plan(
     task_desc: str,
     report_type: str,
     out_dir: Path,
+    index_dir: Path,
+    semantic_top_k: int,
+    no_semantic: bool,
     skip_pptx: bool,
 ) -> int:
     kb = load_knowledge_base(kb_path)
@@ -118,6 +138,9 @@ def cmd_plan(
         task_name=task_name,
         task_description=task_desc,
         report_type=report_type,
+        semantic_index_dir=index_dir,
+        semantic_top_k=semantic_top_k,
+        enable_semantic=not no_semantic,
     )
     slug = (
         "".join(c if c.isalnum() else "-" for c in task_name.lower()).strip("-")
@@ -172,6 +195,9 @@ def main() -> int:
             task_desc=args.task_desc,
             report_type=args.report_type,
             out_dir=args.out_dir,
+            index_dir=args.index_dir,
+            semantic_top_k=args.semantic_top_k,
+            no_semantic=args.no_semantic,
             skip_pptx=args.skip_pptx,
         )
     if args.command == "search":

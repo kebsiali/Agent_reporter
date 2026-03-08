@@ -37,7 +37,15 @@ python -m reporter_agent plan `
   --task-name "Compressor map recalibration iteration 4" `
   --task-desc "Need a report for updated calibration and resulting sensitivity shifts for decision meeting." `
   --report-type model_calibration `
+  --index-dir data\index `
+  --semantic-top-k 4 `
   --out-dir output
+```
+
+Disable semantic mode if needed:
+
+```powershell
+python -m reporter_agent plan --kb data\knowledge_base.json --task-name "X" --task-desc "Y" --no-semantic
 ```
 
 Optional logging:
@@ -61,7 +69,7 @@ Output files:
 ## Notes
 
 - Everything runs locally. No cloud calls.
-- Auto-filled text currently uses text similarity; semantic search is now available via embeddings.
+- Auto-filled text now uses semantic retrieval when index files are available (fallback: keyword mode).
 - Replace all `[[FILL: ...]]` placeholders before sharing.
 
 ## Test

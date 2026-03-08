@@ -36,4 +36,6 @@ def test_build_report_plan_returns_expected_structure() -> None:
     assert len(plan.slides) == 5
     assert plan.slides[0].section == "objective"
     assert all(slide.placeholders for slide in plan.slides)
-
+    assert all(0.0 <= slide.confidence <= 1.0 for slide in plan.slides)
+    assert all(slide.confidence_label in {"low", "medium", "high"} for slide in plan.slides)
+    assert all(isinstance(slide.evidence_gaps, list) for slide in plan.slides)

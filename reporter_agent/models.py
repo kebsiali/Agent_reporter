@@ -35,8 +35,11 @@ class PlannedSlide:
     title: str
     section: str
     objective: str
+    confidence: float
+    confidence_label: str
     autofill_text: str
     placeholders: list[str]
+    evidence_gaps: list[str]
     missing_info_guidance: list[str]
     source_examples: list[str]
 
@@ -60,4 +63,3 @@ class ReportPlan:
             "assumptions": self.assumptions,
             "slides": [s.to_dict() for s in self.slides],
         }
-
