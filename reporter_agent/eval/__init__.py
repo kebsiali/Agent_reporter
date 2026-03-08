@@ -1,2 +1,3 @@
-"""Evaluation package placeholder for retrieval and plan quality metrics."""
+from .benchmark import BenchmarkResult, run_benchmark, save_benchmark
 
+__all__ = ["BenchmarkResult", "run_benchmark", "save_benchmark"]

@@ -22,11 +22,22 @@ python -m reporter_agent index --source-dir "C:\path\to\old\reports" --kb-out da
 ```
 
 This also builds semantic index files in `data/index` by default.
+For performance tuning on strong hardware:
+
+```powershell
+python -m reporter_agent index --source-dir "C:\path\to\old\reports" --device cuda --batch-size 128
+```
 
 ## 3) Search similar historical slides
 
 ```powershell
 python -m reporter_agent search --query "compressor calibration sensitivity results" --index-dir data\index --top-k 5
+```
+
+Force a specific encode device if needed:
+
+```powershell
+python -m reporter_agent search --query "..." --index-dir data\index --device cuda
 ```
 
 ## 4) Generate a new report plan
@@ -65,6 +76,19 @@ python -m reporter_agent chat --session-id projA --message "revise slide 3: repl
 python -m reporter_agent chat --session-id projA --message "accept slide 3"
 python -m reporter_agent chat --session-id projA --message "reject slide 4: lacks baseline comparison"
 python -m reporter_agent chat --session-id projA --message "export plan"
+```
+
+## 6) Performance benchmark
+
+```powershell
+python -m reporter_agent benchmark `
+  --kb data\knowledge_base.json `
+  --index-dir data\index `
+  --query "compressor calibration sensitivity" `
+  --task-name "Benchmark task" `
+  --task-desc "Need calibration and sensitivity summary" `
+  --report-type model_calibration `
+  --out-json output\benchmark.json
 ```
 
 Optional logging:

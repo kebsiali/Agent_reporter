@@ -19,3 +19,17 @@ def test_cli_has_index_and_plan_commands() -> None:
     )
     assert args.command == "chat"
     assert args.session_id == "abc"
+
+    args = parser.parse_args(
+        [
+            "benchmark",
+            "--query",
+            "calibration result",
+            "--task-name",
+            "bench run",
+            "--task-desc",
+            "test benchmark",
+        ]
+    )
+    assert args.command == "benchmark"
+    assert args.search_top_k == 5
