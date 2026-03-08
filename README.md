@@ -48,6 +48,25 @@ Disable semantic mode if needed:
 python -m reporter_agent plan --kb data\knowledge_base.json --task-name "X" --task-desc "Y" --no-semantic
 ```
 
+## 5) Chat mode with growing session memory
+
+Create/continue a session:
+
+```powershell
+python -m reporter_agent chat --session-id projA --kb data\knowledge_base.json --index-dir data\index --message "new task: recalibrate compressor map and summarize sensitivity changes"
+```
+
+Useful follow-up messages:
+
+```powershell
+python -m reporter_agent chat --session-id projA --message "what is missing"
+python -m reporter_agent chat --session-id projA --message "show sources slide 2"
+python -m reporter_agent chat --session-id projA --message "revise slide 3: replace with latest validated numbers from run 47"
+python -m reporter_agent chat --session-id projA --message "accept slide 3"
+python -m reporter_agent chat --session-id projA --message "reject slide 4: lacks baseline comparison"
+python -m reporter_agent chat --session-id projA --message "export plan"
+```
+
 Optional logging:
 
 ```powershell

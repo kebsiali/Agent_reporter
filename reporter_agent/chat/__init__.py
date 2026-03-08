@@ -1,2 +1,3 @@
-"""Chat package placeholder for conversational workflow."""
+from .agent import handle_chat
 
+__all__ = ["handle_chat"]

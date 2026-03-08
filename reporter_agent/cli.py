@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from .chat import handle_chat
 from .config import load_config
 from .exporter import export_plan_json, export_plan_markdown, export_plan_pptx
 from .indexer import build_knowledge_base, load_knowledge_base, save_knowledge_base
@@ -97,6 +98,24 @@ def build_parser() -> argparse.ArgumentParser:
         help="Directory containing semantic index files",
     )
     p_search.add_argument("--top-k", type=int, default=5, help="Number of matches")
+
+    p_chat = sub.add_parser("chat", help="Session-based chat with report planning memory")
+    p_chat.add_argument("--session-id", required=True, help="Session identifier")
+    p_chat.add_argument("--message", required=True, help="User message for the assistant")
+    p_chat.add_argument("--kb", type=Path, default=cfg.data_dir / "knowledge_base.json")
+    p_chat.add_argument("--index-dir", type=Path, default=cfg.data_dir / "index")
+    p_chat.add_argument("--sessions-dir", type=Path, default=cfg.data_dir / "sessions")
+    p_chat.add_argument(
+        "--report-type",
+        default="simulation_request",
+        choices=[
+            "simulation_request",
+            "literature_review",
+            "model_calibration",
+            "model_sensitivity_analysis",
+        ],
+    )
+    p_chat.add_argument("--semantic-top-k", type=int, default=5)
     return parser
 
 
@@ -177,6 +196,29 @@ def cmd_search(query: str, index_dir: Path, top_k: int) -> int:
     return 0
 
 
+def cmd_chat(
+    session_id: str,
+    message: str,
+    kb_path: Path,
+    index_dir: Path,
+    sessions_dir: Path,
+    report_type: str,
+    semantic_top_k: int,
+) -> int:
+    response, session_path = handle_chat(
+        sessions_dir=sessions_dir,
+        session_id=session_id,
+        kb_path=kb_path,
+        index_dir=index_dir,
+        message=message,
+        report_type=report_type,
+        semantic_top_k=semantic_top_k,
+    )
+    print(response)
+    print(f"[OK] Session saved: {session_path}")
+    return 0
+
+
 def main() -> int:
     args = build_parser().parse_args()
     configure_logging(args.log_level)
@@ -202,6 +244,16 @@ def main() -> int:
         )
     if args.command == "search":
         return cmd_search(query=args.query, index_dir=args.index_dir, top_k=args.top_k)
+    if args.command == "chat":
+        return cmd_chat(
+            session_id=args.session_id,
+            message=args.message,
+            kb_path=args.kb,
+            index_dir=args.index_dir,
+            sessions_dir=args.sessions_dir,
+            report_type=args.report_type,
+            semantic_top_k=args.semantic_top_k,
+        )
     raise ValueError(f"Unknown command: {args.command}")
 
 

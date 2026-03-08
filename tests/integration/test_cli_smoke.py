@@ -13,3 +13,9 @@ def test_cli_has_index_and_plan_commands() -> None:
     )
     assert args.command == "search"
     assert args.top_k == 3
+
+    args = parser.parse_args(
+        ["chat", "--session-id", "abc", "--message", "new task: do calibration", "--kb", "data\\knowledge_base.json"]
+    )
+    assert args.command == "chat"
+    assert args.session_id == "abc"
