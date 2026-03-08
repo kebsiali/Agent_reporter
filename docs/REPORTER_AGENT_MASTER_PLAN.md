@@ -15,6 +15,7 @@ Key update:
 5. Company template style fidelity is mandatory.
 6. GUI must show `Ingested PPTs` and prevent duplicate ingestion of already indexed files.
 7. CHILD memory must remain portable across versions/machines with merge support per `docs/CHILD_CONTINUITY_SPEC.md`.
+8. Multi-child management with default `MASTER_CHILD` must follow `docs/MULTI_CHILD_OPERATING_MODEL.md`.
 
 ## 1. Vision and Outcome
 

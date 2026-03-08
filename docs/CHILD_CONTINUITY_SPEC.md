@@ -12,6 +12,10 @@ This spec defines how CHILD memory survives:
 
 Goal: migration and merge must be easy, explicit, and repeatable.
 
+Multi-child orchestration rules are extended by:
+
+1. `docs/MULTI_CHILD_OPERATING_MODEL.md`
+
 ## 2. Core Principle
 
 CHILD is not tied to one install folder.  
@@ -145,4 +149,3 @@ Merged CHILD must preserve all feedback provenance.
 3. Merged CHILD retains appraisals and punishments with provenance.
 4. Upgrading software versions keeps CHILD usable through auto-migrations.
 5. GUI exposes import/export/merge/rollback without terminal use.
-
