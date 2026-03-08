@@ -17,6 +17,7 @@ from ..indexer import build_knowledge_base_with_diagnostics, load_knowledge_base
 from ..planner import build_report_plan
 from ..retrieval import build_semantic_index
 from ..storage import find_by_hash, list_ingested_ppts, load_registry, register_ingested_file, save_registry
+from ..template import extract_template_profile, load_template_profile, save_template_profile
 
 
 VALID_PROJECT = re.compile(r"^[a-zA-Z0-9_\-]{1,64}$")
@@ -55,6 +56,8 @@ def _project_paths(base_data_dir: Path, project_id: str) -> dict[str, Path]:
         "output_dir": root / "output",
         "diagnostics_path": root / "index_diagnostics.json",
         "registry_path": root / "ingestion_registry.json",
+        "template_pptx": root / "template" / "company_template.pptx",
+        "template_profile": root / "template" / "template_profile.json",
     }
 
 
@@ -96,6 +99,31 @@ def create_app(base_data_dir: Path = Path("data")) -> FastAPI:
         paths["context_dir"].mkdir(parents=True, exist_ok=True)
         files = [p.name for p in sorted(paths["context_dir"].glob("*")) if p.is_file()]
         return {"project_id": project_id, "files": files}
+
+    @app.get("/api/projects/{project_id}/template")
+    def get_template(project_id: str) -> dict[str, Any]:
+        paths = _project_paths(base_data_dir, project_id)
+        profile = load_template_profile(paths["template_profile"])
+        return {
+            "project_id": project_id,
+            "template_exists": paths["template_pptx"].exists(),
+            "template_path": str(paths["template_pptx"]),
+            "profile": profile,
+        }
+
+    @app.post("/api/projects/{project_id}/upload-template")
+    async def upload_template(project_id: str, file: UploadFile = File(...)) -> dict[str, Any]:
+        paths = _project_paths(base_data_dir, project_id)
+        if not (file.filename or "").lower().endswith((".ppt", ".pptx")):
+            raise HTTPException(status_code=400, detail="Template must be PPT/PPTX.")
+        payload = await file.read()
+        if not payload:
+            raise HTTPException(status_code=400, detail="Uploaded template is empty.")
+        paths["template_pptx"].parent.mkdir(parents=True, exist_ok=True)
+        paths["template_pptx"].write_bytes(payload)
+        profile = extract_template_profile(paths["template_pptx"])
+        save_template_profile(paths["template_profile"], profile)
+        return {"template_path": str(paths["template_pptx"]), "profile": profile}
 
     @app.post("/api/projects/{project_id}/upload-context")
     async def upload_context(project_id: str, files: list[UploadFile] = File(...)) -> dict[str, Any]:
@@ -219,7 +247,13 @@ def create_app(base_data_dir: Path = Path("data")) -> FastAPI:
         pptx_path = paths["output_dir"] / f"{slug}.pptx"
         export_plan_markdown(plan_obj, md_path)
         export_plan_json(plan_obj, json_path)
-        export_plan_pptx(plan_obj, pptx_path)
+        profile = load_template_profile(paths["template_profile"])
+        export_plan_pptx(
+            plan_obj,
+            pptx_path,
+            template_pptx=paths["template_pptx"] if paths["template_pptx"].exists() else None,
+            style_profile=profile,
+        )
 
         return {
             "project_id": project_id,
@@ -238,4 +272,3 @@ def run_gui(host: str = "127.0.0.1", port: int = 8000, reload: bool = False) -> 
     import uvicorn
 
     uvicorn.run("reporter_agent.gui.app:create_app", factory=True, host=host, port=port, reload=reload)
-

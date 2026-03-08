@@ -17,6 +17,7 @@ from .indexer import (
 from .logging_utils import configure_logging
 from .planner import build_report_plan
 from .retrieval import build_semantic_index, semantic_search
+from .template import extract_template_profile
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -111,6 +112,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--skip-pptx",
         action="store_true",
         help="Skip draft pptx export",
+    )
+    p_plan.add_argument(
+        "--template-pptx",
+        type=Path,
+        default=None,
+        help="Optional company template PPTX to enforce style on generated deck",
     )
 
     p_search = sub.add_parser("search", help="Semantic search over indexed slides")
@@ -222,6 +229,7 @@ def cmd_plan(
     semantic_top_k: int,
     no_semantic: bool,
     skip_pptx: bool,
+    template_pptx: Path | None,
 ) -> int:
     kb = load_knowledge_base(kb_path)
     plan = build_report_plan(
@@ -244,7 +252,8 @@ def cmd_plan(
     export_plan_markdown(plan, md_path)
     export_plan_json(plan, json_path)
     if not skip_pptx:
-        export_plan_pptx(plan, pptx_path)
+        style_profile = extract_template_profile(template_pptx) if template_pptx else None
+        export_plan_pptx(plan, pptx_path, template_pptx=template_pptx, style_profile=style_profile)
 
     print(f"[OK] Markdown: {md_path}")
     print(f"[OK] JSON: {json_path}")
@@ -378,6 +387,7 @@ def main() -> int:
             semantic_top_k=args.semantic_top_k,
             no_semantic=args.no_semantic,
             skip_pptx=args.skip_pptx,
+            template_pptx=args.template_pptx,
         )
     if args.command == "search":
         return cmd_search(query=args.query, index_dir=args.index_dir, top_k=args.top_k, device=args.device)

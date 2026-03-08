@@ -22,6 +22,7 @@ GUI supports:
 - in-GUI chat
 - in-GUI plan generation + export paths
 - context file upload (pdf/json/csv/xlsx/images/etc.)
+- company template upload + style-locked deck export
 
 A local Python CLI that:
 - Reads historical `.pptx` reports
@@ -74,6 +75,7 @@ python -m reporter_agent plan `
   --report-type model_calibration `
   --index-dir data\index `
   --semantic-top-k 4 `
+  --template-pptx "C:\path\to\company_template.pptx" `
   --out-dir output
 ```
 

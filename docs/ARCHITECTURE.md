@@ -25,6 +25,7 @@ GUI requirement update:
 8. `storage`: persistence for feedback/session memory.
 9. `doctor`: environment and readiness checks for dependencies/indexes.
 10. `ingestion_registry`: persistent catalog of ingested files and dedup metadata.
+11. `template`: company template profile extraction and style-locked export.
 
 ## Current Entry Points
 

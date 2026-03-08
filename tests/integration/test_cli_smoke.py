@@ -40,3 +40,18 @@ def test_cli_has_index_and_plan_commands() -> None:
     args = parser.parse_args(["gui", "--host", "127.0.0.1", "--port", "8010"])
     assert args.command == "gui"
     assert args.port == 8010
+
+    args = parser.parse_args(
+        [
+            "plan",
+            "--kb",
+            "data\\knowledge_base.json",
+            "--task-name",
+            "t1",
+            "--task-desc",
+            "d1",
+            "--template-pptx",
+            "company_template.pptx",
+        ]
+    )
+    assert args.template_pptx.name == "company_template.pptx"

@@ -57,6 +57,24 @@ document.getElementById("ctxUploadBtn").addEventListener("click", async () => {
   setText("ctxResult", JSON.stringify(data, null, 2));
 });
 
+document.getElementById("templateUploadBtn").addEventListener("click", async () => {
+  const pid = projectId();
+  const input = document.getElementById("templateFile");
+  if (!input.files.length) return;
+  const form = new FormData();
+  form.append("file", input.files[0]);
+  const res = await fetch(`/api/projects/${pid}/upload-template`, { method: "POST", body: form });
+  const data = await res.json();
+  setText("templateResult", JSON.stringify(data, null, 2));
+});
+
+document.getElementById("templateStatusBtn").addEventListener("click", async () => {
+  const pid = projectId();
+  const res = await fetch(`/api/projects/${pid}/template`);
+  const data = await res.json();
+  setText("templateResult", JSON.stringify(data, null, 2));
+});
+
 document.getElementById("generateBtn").addEventListener("click", async () => {
   const pid = projectId();
   const payload = {
@@ -104,4 +122,3 @@ dropZone.addEventListener("drop", async (e) => {
 });
 
 loadIngested();
-
