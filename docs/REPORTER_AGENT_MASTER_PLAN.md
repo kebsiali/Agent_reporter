@@ -13,6 +13,7 @@ Key update:
 3. Chat must be inside GUI.
 4. Multimodal inputs (PDF/plots/data/tables/equations) are mandatory.
 5. Company template style fidelity is mandatory.
+6. GUI must show `Ingested PPTs` and prevent duplicate ingestion of already indexed files.
 
 ## 1. Vision and Outcome
 

@@ -53,6 +53,8 @@ The reporter agent is now **GUI-first**. Terminal commands remain developer/admi
 3. Inline error diagnostics (malformed file, parse failure, missing fields).
 4. One-click rerun of failed ingestion items.
 5. Source traceability per generated claim/slide.
+6. A visible `Ingested PPTs` button/panel showing already indexed PPT names.
+7. Import dedup behavior: if user adds an already ingested PPT, software must skip re-ingestion and mark it as `Already Ingested`.
 
 ## 4. Input and Parsing Requirements
 
@@ -62,6 +64,20 @@ The reporter agent is now **GUI-first**. Terminal commands remain developer/admi
 2. PDF (required)
 3. CSV/XLSX/JSON (required)
 4. Image plots (required)
+
+### 4.3 Ingestion Registry and Dedup (Required)
+
+1. Maintain an ingestion registry containing:
+   - file path
+   - file name
+   - content fingerprint/hash
+   - first-ingested timestamp
+   - latest-ingested timestamp
+   - status
+2. GUI must expose this registry through `Ingested PPTs` view/button.
+3. During import, dedup check must run before parsing/embedding.
+4. If exact same file/content is already ingested, skip full pipeline and inform user.
+5. If same path but content changed, treat as new version and re-index.
 
 ### 4.2 PDF and Figure Understanding (Required)
 
@@ -120,6 +136,8 @@ Use practical local preference learning/weight updates first. Full RL-style opti
 1. FastAPI backend + local web UI shell.
 2. Drag-and-drop + `Add PPT` ingestion panel.
 3. In-GUI chat connected to existing chat engine.
+4. `Ingested PPTs` panel with search/filter/status.
+5. Dedup pre-check in ingestion flow.
 
 ## Phase 7: Template Fidelity Engine
 
@@ -146,4 +164,3 @@ Use practical local preference learning/weight updates first. Full RL-style opti
 3. Generated deck follows company template profile by default.
 4. PDF plots/tables/equations are discoverable and usable as evidence.
 5. Feedback loop measurably improves relevance and style consistency over time.
-
