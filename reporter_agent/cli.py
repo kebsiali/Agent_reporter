@@ -8,6 +8,7 @@ from .exporter import export_plan_json, export_plan_markdown, export_plan_pptx
 from .indexer import build_knowledge_base, load_knowledge_base, save_knowledge_base
 from .logging_utils import configure_logging
 from .planner import build_report_plan
+from .retrieval import build_semantic_index, semantic_search
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -31,6 +32,22 @@ def build_parser() -> argparse.ArgumentParser:
         default=cfg.data_dir / "knowledge_base.json",
         help="Output KB JSON path",
     )
+    p_index.add_argument(
+        "--index-dir",
+        type=Path,
+        default=cfg.data_dir / "index",
+        help="Directory for semantic vector index files",
+    )
+    p_index.add_argument(
+        "--embedding-model",
+        default="sentence-transformers/all-MiniLM-L6-v2",
+        help="SentenceTransformer model name for semantic index",
+    )
+    p_index.add_argument(
+        "--skip-embeddings",
+        action="store_true",
+        help="Skip building semantic embedding index",
+    )
 
     p_plan = sub.add_parser("plan", help="Generate new report plan from local KB")
     p_plan.add_argument("--kb", required=True, type=Path, help="Knowledge base json path")
@@ -53,13 +70,37 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Skip draft pptx export",
     )
+
+    p_search = sub.add_parser("search", help="Semantic search over indexed slides")
+    p_search.add_argument("--query", required=True, help="Search query")
+    p_search.add_argument(
+        "--index-dir",
+        type=Path,
+        default=cfg.data_dir / "index",
+        help="Directory containing semantic index files",
+    )
+    p_search.add_argument("--top-k", type=int, default=5, help="Number of matches")
     return parser
 
 
-def cmd_index(source_dir: Path, kb_out: Path) -> int:
+def cmd_index(
+    source_dir: Path,
+    kb_out: Path,
+    index_dir: Path,
+    embedding_model: str,
+    skip_embeddings: bool,
+) -> int:
     kb = build_knowledge_base(source_dir)
     save_knowledge_base(kb, kb_out)
     print(f"[OK] Indexed {len(kb.slides)} slides -> {kb_out}")
+    if not skip_embeddings and kb.slides:
+        index_path, meta_path = build_semantic_index(
+            kb=kb,
+            index_dir=index_dir,
+            embedding_model=embedding_model,
+        )
+        print(f"[OK] Semantic index: {index_path}")
+        print(f"[OK] Semantic metadata: {meta_path}")
     return 0
 
 
@@ -98,11 +139,32 @@ def cmd_plan(
     return 0
 
 
+def cmd_search(query: str, index_dir: Path, top_k: int) -> int:
+    hits = semantic_search(query=query, index_dir=index_dir, top_k=top_k)
+    if not hits:
+        print("[INFO] No matches found.")
+        return 0
+
+    for h in hits:
+        print(
+            f"[{h.rank}] score={h.score:.4f} | {h.section} | {h.title} | "
+            f"{h.source_file}#slide-{h.slide_index}"
+        )
+        print(f"      {h.excerpt}")
+    return 0
+
+
 def main() -> int:
     args = build_parser().parse_args()
     configure_logging(args.log_level)
     if args.command == "index":
-        return cmd_index(args.source_dir, args.kb_out)
+        return cmd_index(
+            source_dir=args.source_dir,
+            kb_out=args.kb_out,
+            index_dir=args.index_dir,
+            embedding_model=args.embedding_model,
+            skip_embeddings=args.skip_embeddings,
+        )
     if args.command == "plan":
         return cmd_plan(
             kb_path=args.kb,
@@ -112,6 +174,8 @@ def main() -> int:
             out_dir=args.out_dir,
             skip_pptx=args.skip_pptx,
         )
+    if args.command == "search":
+        return cmd_search(query=args.query, index_dir=args.index_dir, top_k=args.top_k)
     raise ValueError(f"Unknown command: {args.command}")
 
 

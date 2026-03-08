@@ -3,6 +3,7 @@
 A local Python CLI that:
 - Reads historical `.pptx` reports
 - Builds a reusable knowledge base from slide text
+- Builds a semantic vector index for fast relevance search
 - Generates a new report plan for a new task
 - Auto-fills what it can, inserts explicit blanks where data is missing
 - Exports draft outputs as Markdown, JSON, and PPTX
@@ -20,7 +21,15 @@ python -m pip install -r requirements-dev.txt
 python -m reporter_agent index --source-dir "C:\path\to\old\reports" --kb-out data\knowledge_base.json
 ```
 
-## 3) Generate a new report plan
+This also builds semantic index files in `data/index` by default.
+
+## 3) Search similar historical slides
+
+```powershell
+python -m reporter_agent search --query "compressor calibration sensitivity results" --index-dir data\index --top-k 5
+```
+
+## 4) Generate a new report plan
 
 ```powershell
 python -m reporter_agent plan `
@@ -52,7 +61,7 @@ Output files:
 ## Notes
 
 - Everything runs locally. No cloud calls.
-- Auto-filled text is based on historical slide text similarity only.
+- Auto-filled text currently uses text similarity; semantic search is now available via embeddings.
 - Replace all `[[FILL: ...]]` placeholders before sharing.
 
 ## Test
