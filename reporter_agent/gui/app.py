@@ -27,6 +27,7 @@ from ..indexer import (
     save_diagnostics,
     save_knowledge_base,
 )
+from ..master_sync import get_master_health, run_master_sync
 from ..planner import build_report_plan
 from ..retrieval import build_semantic_index
 from ..storage import find_by_hash, list_ingested_ppts, load_registry, register_ingested_file, save_registry
@@ -83,6 +84,11 @@ class ChildMergeRequest(BaseModel):
     source_child_id: str = Field(min_length=1)
     target_child_id: str = Field(min_length=1)
     strategy: str = "union_dedup"
+
+
+class MasterPolicyRequest(BaseModel):
+    mode: str = "scheduled"
+    strategy: str = "quality_weighted"
 
 
 def _validate_project_id(project_id: str) -> str:
@@ -165,6 +171,26 @@ def create_app(base_data_dir: Path = Path("data")) -> FastAPI:
     def get_children() -> dict[str, Any]:
         reg = _load_registry(base_data_dir)
         return {"active_child_id": reg.get("active_child_id", MASTER_CHILD_ID), "children": list_children(reg)}
+
+    @app.get("/api/master/health")
+    def master_health() -> dict[str, Any]:
+        return get_master_health(base_data_dir)
+
+    @app.post("/api/master/sync/run")
+    def master_sync_run(strategy: str = "quality_weighted") -> dict[str, Any]:
+        event = run_master_sync(base_data_dir, strategy=strategy, mode="manual")
+        return {"status": "ok", "event": event}
+
+    @app.post("/api/master/policy")
+    def master_policy_set(payload: MasterPolicyRequest) -> dict[str, Any]:
+        reg = _load_registry(base_data_dir)
+        reg["master_sync"] = {
+            "policy_mode": payload.mode,
+            "policy_strategy": payload.strategy,
+            "last_sync_at": reg.get("master_sync", {}).get("last_sync_at"),
+        }
+        _save_registry(base_data_dir, reg)
+        return {"status": "ok", "master_sync": reg["master_sync"]}
 
     @app.post("/api/children/create")
     def create_child_api(payload: ChildCreateRequest) -> dict[str, Any]:

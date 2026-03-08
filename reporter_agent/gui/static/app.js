@@ -238,6 +238,33 @@ document.getElementById("mergeApplyBtn").addEventListener("click", async () => {
   await loadChildren();
 });
 
+document.getElementById("masterPolicyBtn").addEventListener("click", async () => {
+  const mode = document.getElementById("masterPolicyMode").value;
+  const strategy = document.getElementById("masterPolicyStrategy").value;
+  const res = await fetch("/api/master/policy", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mode, strategy })
+  });
+  const data = await res.json();
+  setText("masterResult", JSON.stringify(data, null, 2));
+});
+
+document.getElementById("masterHealthBtn").addEventListener("click", async () => {
+  const res = await fetch("/api/master/health");
+  const data = await res.json();
+  setText("masterResult", JSON.stringify(data, null, 2));
+});
+
+document.getElementById("masterSyncBtn").addEventListener("click", async () => {
+  const strategy = document.getElementById("masterPolicyStrategy").value;
+  const res = await fetch(`/api/master/sync/run?strategy=${encodeURIComponent(strategy)}`, {
+    method: "POST"
+  });
+  const data = await res.json();
+  setText("masterResult", JSON.stringify(data, null, 2));
+});
+
 const dropZone = document.getElementById("dropZone");
 dropZone.addEventListener("dragover", (e) => {
   e.preventDefault();

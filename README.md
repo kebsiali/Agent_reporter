@@ -21,6 +21,8 @@ GUI supports:
 - create/clone/archive child workflows
 - import bundle as new child or into existing child
 - merge preview/apply between children with strategy selection
+- MASTER_CHILD health dashboard and manual sync trigger
+- master sync policy mode/strategy controls
 - drag/drop PPT ingestion
 - `Add PPT` button
 - `Show Ingested PPTs` button/panel

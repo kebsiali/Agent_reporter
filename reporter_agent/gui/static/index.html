@@ -92,6 +92,25 @@
       <button id="mergeApplyBtn">Merge Apply</button>
       <pre id="childResult"></pre>
     </section>
+
+    <section class="card">
+      <h2>MASTER_CHILD Sync</h2>
+      <select id="masterPolicyMode">
+        <option value="scheduled">scheduled</option>
+        <option value="manual">manual</option>
+        <option value="automatic">automatic</option>
+      </select>
+      <select id="masterPolicyStrategy">
+        <option value="quality_weighted">quality_weighted</option>
+        <option value="union_dedup">union_dedup</option>
+        <option value="recency_weighted">recency_weighted</option>
+        <option value="master_priority">master_priority</option>
+      </select>
+      <button id="masterPolicyBtn">Set Master Policy</button>
+      <button id="masterHealthBtn">Show Master Health</button>
+      <button id="masterSyncBtn">Run Master Sync Now</button>
+      <pre id="masterResult"></pre>
+    </section>
   </main>
 
   <script src="/static/app.js"></script>
