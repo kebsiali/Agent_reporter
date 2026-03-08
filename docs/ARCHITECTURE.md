@@ -5,6 +5,7 @@
 Primary product direction is now GUI-first per:
 
 1. `docs/GUI_PRODUCT_SPEC.md`
+2. `docs/CHILD_CONTINUITY_SPEC.md`
 
 CLI remains available for development, automation, and diagnostics.
 
@@ -26,6 +27,7 @@ GUI requirement update:
 9. `doctor`: environment and readiness checks for dependencies/indexes.
 10. `ingestion_registry`: persistent catalog of ingested files and dedup metadata.
 11. `template`: company template profile extraction and style-locked export.
+12. `child_memory`: versioned portable memory package, migrations, merge engine, snapshots.
 
 ## Current Entry Points
 

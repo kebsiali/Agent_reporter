@@ -2,6 +2,7 @@
 
 Spec note:
 - GUI-first future scope is defined in `docs/GUI_PRODUCT_SPEC.md`.
+- CHILD continuity/merge scope is defined in `docs/CHILD_CONTINUITY_SPEC.md`.
 
 ## GUI (Phase 6)
 

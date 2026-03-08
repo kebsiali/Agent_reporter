@@ -14,6 +14,7 @@ Key update:
 4. Multimodal inputs (PDF/plots/data/tables/equations) are mandatory.
 5. Company template style fidelity is mandatory.
 6. GUI must show `Ingested PPTs` and prevent duplicate ingestion of already indexed files.
+7. CHILD memory must remain portable across versions/machines with merge support per `docs/CHILD_CONTINUITY_SPEC.md`.
 
 ## 1. Vision and Outcome
 

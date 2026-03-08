@@ -4,6 +4,10 @@
 
 The reporter agent is now **GUI-first**. Terminal commands remain developer/admin tools, but normal user workflow must be fully in GUI.
 
+Continuity requirement:
+
+1. CHILD memory continuity and merge behavior is governed by `docs/CHILD_CONTINUITY_SPEC.md`.
+
 ## 2. Mandatory User Workflow
 
 1. User opens desktop/local web GUI.
@@ -55,6 +59,8 @@ The reporter agent is now **GUI-first**. Terminal commands remain developer/admi
 5. Source traceability per generated claim/slide.
 6. A visible `Ingested PPTs` button/panel showing already indexed PPT names.
 7. Import dedup behavior: if user adds an already ingested PPT, software must skip re-ingestion and mark it as `Already Ingested`.
+8. A visible `Merge CHILD Histories` button/wizard.
+9. A visible `Export CHILD` and `Import CHILD` action set.
 
 ## 4. Input and Parsing Requirements
 
