@@ -107,6 +107,31 @@ document.getElementById("chatBtn").addEventListener("click", async () => {
   addChatLine("agent", data.response || JSON.stringify(data));
 });
 
+document.getElementById("childStatusBtn").addEventListener("click", async () => {
+  const pid = projectId();
+  const res = await fetch(`/api/projects/${pid}/child/status`);
+  const data = await res.json();
+  setText("childResult", JSON.stringify(data, null, 2));
+});
+
+document.getElementById("childExportBtn").addEventListener("click", async () => {
+  const pid = projectId();
+  const res = await fetch(`/api/projects/${pid}/child/export`, { method: "POST" });
+  const data = await res.json();
+  setText("childResult", JSON.stringify(data, null, 2));
+});
+
+document.getElementById("childImportBtn").addEventListener("click", async () => {
+  const pid = projectId();
+  const input = document.getElementById("childImportFile");
+  if (!input.files.length) return;
+  const form = new FormData();
+  form.append("file", input.files[0]);
+  const res = await fetch(`/api/projects/${pid}/child/import`, { method: "POST", body: form });
+  const data = await res.json();
+  setText("childResult", JSON.stringify(data, null, 2));
+});
+
 const dropZone = document.getElementById("dropZone");
 dropZone.addEventListener("dragover", (e) => {
   e.preventDefault();

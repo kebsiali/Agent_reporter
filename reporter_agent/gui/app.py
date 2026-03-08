@@ -11,6 +11,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from ..child_memory import CURRENT_SCHEMA_VERSION, export_child_bundle, import_child_bundle
 from ..chat import handle_chat
 from ..exporter import export_plan_json, export_plan_markdown, export_plan_pptx
 from ..indexer import build_knowledge_base_with_diagnostics, load_knowledge_base, save_diagnostics, save_knowledge_base
@@ -58,6 +59,9 @@ def _project_paths(base_data_dir: Path, project_id: str) -> dict[str, Path]:
         "registry_path": root / "ingestion_registry.json",
         "template_pptx": root / "template" / "company_template.pptx",
         "template_profile": root / "template" / "template_profile.json",
+        "child_dir": root / "child",
+        "child_exports": root / "child" / "exports",
+        "child_snapshots": root / "child" / "snapshots",
     }
 
 
@@ -110,6 +114,49 @@ def create_app(base_data_dir: Path = Path("data")) -> FastAPI:
             "template_path": str(paths["template_pptx"]),
             "profile": profile,
         }
+
+    @app.get("/api/projects/{project_id}/child/status")
+    def child_status(project_id: str) -> dict[str, Any]:
+        paths = _project_paths(base_data_dir, project_id)
+        paths["child_exports"].mkdir(parents=True, exist_ok=True)
+        exports = [p.name for p in sorted(paths["child_exports"].glob("*.zip"))]
+        return {
+            "project_id": project_id,
+            "child_id": project_id,
+            "schema_version": CURRENT_SCHEMA_VERSION,
+            "exports_count": len(exports),
+            "exports": exports[-20:],
+        }
+
+    @app.post("/api/projects/{project_id}/child/export")
+    def child_export(project_id: str) -> dict[str, Any]:
+        paths = _project_paths(base_data_dir, project_id)
+        zip_path = export_child_bundle(
+            child_id=project_id,
+            project_root=paths["root"],
+            bundle_out_dir=paths["child_exports"],
+            app_version="0.1.0",
+        )
+        return {"project_id": project_id, "bundle": str(zip_path)}
+
+    @app.post("/api/projects/{project_id}/child/import")
+    async def child_import(project_id: str, file: UploadFile = File(...)) -> dict[str, Any]:
+        paths = _project_paths(base_data_dir, project_id)
+        if not (file.filename or "").lower().endswith(".zip"):
+            raise HTTPException(status_code=400, detail="CHILD bundle must be a .zip file.")
+        payload = await file.read()
+        if not payload:
+            raise HTTPException(status_code=400, detail="Uploaded bundle is empty.")
+        paths["child_dir"].mkdir(parents=True, exist_ok=True)
+        temp_zip = paths["child_dir"] / "import_bundle.zip"
+        temp_zip.write_bytes(payload)
+        result = import_child_bundle(
+            bundle_zip=temp_zip,
+            project_root=paths["root"],
+            snapshots_dir=paths["child_snapshots"],
+        )
+        temp_zip.unlink(missing_ok=True)
+        return result
 
     @app.post("/api/projects/{project_id}/upload-template")
     async def upload_template(project_id: str, file: UploadFile = File(...)) -> dict[str, Any]:

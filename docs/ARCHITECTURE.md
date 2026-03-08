@@ -38,6 +38,8 @@ GUI requirement update:
 5. `python -m reporter_agent benchmark`
 6. `python -m reporter_agent doctor`
 7. `python -m reporter_agent gui`
+8. `python -m reporter_agent child-export`
+9. `python -m reporter_agent child-import`
 
 ## Configuration
 

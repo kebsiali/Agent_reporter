@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from .child_memory import export_child_bundle, import_child_bundle
 from .chat import handle_chat
 from .config import load_config
 from .doctor import run_doctor
@@ -181,6 +182,16 @@ def build_parser() -> argparse.ArgumentParser:
     p_gui.add_argument("--host", default="127.0.0.1")
     p_gui.add_argument("--port", type=int, default=8000)
     p_gui.add_argument("--reload", action="store_true")
+
+    p_child_export = sub.add_parser("child-export", help="Export CHILD memory bundle")
+    p_child_export.add_argument("--child-id", required=True)
+    p_child_export.add_argument("--project-root", type=Path, required=True)
+    p_child_export.add_argument("--out-dir", type=Path, default=Path("data/child_exports"))
+
+    p_child_import = sub.add_parser("child-import", help="Import CHILD memory bundle")
+    p_child_import.add_argument("--bundle-zip", type=Path, required=True)
+    p_child_import.add_argument("--project-root", type=Path, required=True)
+    p_child_import.add_argument("--snapshots-dir", type=Path, default=Path("data/child_snapshots"))
     return parser
 
 
@@ -361,6 +372,19 @@ def cmd_gui(host: str, port: int, reload: bool) -> int:
     return 0
 
 
+def cmd_child_export(child_id: str, project_root: Path, out_dir: Path) -> int:
+    zip_path = export_child_bundle(child_id=child_id, project_root=project_root, bundle_out_dir=out_dir)
+    print(f"[OK] CHILD bundle exported: {zip_path}")
+    return 0
+
+
+def cmd_child_import(bundle_zip: Path, project_root: Path, snapshots_dir: Path) -> int:
+    result = import_child_bundle(bundle_zip=bundle_zip, project_root=project_root, snapshots_dir=snapshots_dir)
+    print(f"[OK] CHILD bundle imported for child_id={result.get('child_id')}")
+    print(f"[OK] Snapshot: {result.get('snapshot_path')}")
+    return 0
+
+
 def main() -> int:
     args = build_parser().parse_args()
     configure_logging(args.log_level)
@@ -417,6 +441,14 @@ def main() -> int:
         return cmd_doctor(kb_path=args.kb, index_dir=args.index_dir)
     if args.command == "gui":
         return cmd_gui(host=args.host, port=args.port, reload=args.reload)
+    if args.command == "child-export":
+        return cmd_child_export(child_id=args.child_id, project_root=args.project_root, out_dir=args.out_dir)
+    if args.command == "child-import":
+        return cmd_child_import(
+            bundle_zip=args.bundle_zip,
+            project_root=args.project_root,
+            snapshots_dir=args.snapshots_dir,
+        )
     raise ValueError(f"Unknown command: {args.command}")
 
 

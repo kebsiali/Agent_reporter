@@ -55,3 +55,19 @@ def test_cli_has_index_and_plan_commands() -> None:
         ]
     )
     assert args.template_pptx.name == "company_template.pptx"
+
+    args = parser.parse_args(
+        ["child-export", "--child-id", "CHILD", "--project-root", "data\\gui_projects\\default_project"]
+    )
+    assert args.command == "child-export"
+
+    args = parser.parse_args(
+        [
+            "child-import",
+            "--bundle-zip",
+            "data\\bundle.zip",
+            "--project-root",
+            "data\\gui_projects\\default_project",
+        ]
+    )
+    assert args.command == "child-import"

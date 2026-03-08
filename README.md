@@ -24,6 +24,7 @@ GUI supports:
 - in-GUI plan generation + export paths
 - context file upload (pdf/json/csv/xlsx/images/etc.)
 - company template upload + style-locked deck export
+- CHILD memory controls: status, export bundle, import bundle
 
 A local Python CLI that:
 - Reads historical `.pptx` reports
