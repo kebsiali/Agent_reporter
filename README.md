@@ -17,6 +17,8 @@ Open:
 - `http://127.0.0.1:8000`
 
 GUI supports:
+- child selector with default `MASTER_CHILD`
+- create/clone/archive child workflows
 - drag/drop PPT ingestion
 - `Add PPT` button
 - `Show Ingested PPTs` button/panel

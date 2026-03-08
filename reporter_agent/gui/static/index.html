@@ -14,9 +14,15 @@
 
   <main>
     <section class="card">
-      <h2>Project</h2>
-      <label>Project ID</label>
-      <input id="projectId" value="default_project" />
+      <h2>Children</h2>
+      <label>Selected Child</label>
+      <select id="childSelect"></select>
+      <input id="projectId" value="_active" type="hidden" />
+      <input id="newChildId" placeholder="new child id (e.g. CHILD_A)" />
+      <input id="newChildName" placeholder="new child name" />
+      <button id="createChildBtn">Create Child</button>
+      <button id="cloneChildBtn">Clone Selected Child</button>
+      <button id="archiveChildBtn">Archive Selected Child</button>
       <button id="loadIngestedBtn">Show Ingested PPTs</button>
       <ul id="ingestedList"></ul>
     </section>

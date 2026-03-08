@@ -6,6 +6,16 @@ from .ingestion_registry import (
     register_ingested_file,
     save_registry,
 )
+from .child_registry import (
+    MASTER_CHILD_ID,
+    archive_child,
+    create_child,
+    find_child,
+    list_children,
+    load_child_registry,
+    save_child_registry,
+    set_active_child,
+)
 
 __all__ = [
     "append_history",
@@ -16,4 +26,12 @@ __all__ = [
     "load_registry",
     "register_ingested_file",
     "save_registry",
+    "MASTER_CHILD_ID",
+    "archive_child",
+    "create_child",
+    "find_child",
+    "list_children",
+    "load_child_registry",
+    "save_child_registry",
+    "set_active_child",
 ]
