@@ -50,14 +50,18 @@ def extract_text_from_slide(slide) -> tuple[str, str]:
     title = ""
     lines: list[str] = []
     for shape in slide.shapes:
-        if not hasattr(shape, "text"):
+        try:
+            if not hasattr(shape, "text"):
+                continue
+            text = (shape.text or "").strip()
+            if not text:
+                continue
+            if shape == slide.shapes.title and not title:
+                title = text
+            lines.append(text)
+        except Exception:  # noqa: BLE001
+            # Malformed shape payloads exist in some legacy decks; skip safely.
             continue
-        text = (shape.text or "").strip()
-        if not text:
-            continue
-        if shape == slide.shapes.title and not title:
-            title = text
-        lines.append(text)
     raw_text = "\n".join(lines)
     return title, raw_text
 
@@ -88,20 +92,28 @@ def extract_slide_records(pptx_path: Path) -> list[SlideRecord]:
             "python-pptx is required for PPT ingestion. Install with: python -m pip install python-pptx"
         ) from exc
 
-    prs = Presentation(str(pptx_path))
+    try:
+        prs = Presentation(str(pptx_path))
+    except Exception as exc:  # noqa: BLE001
+        raise ValueError(f"Could not parse PPTX '{pptx_path}': {exc}") from exc
+
     slide_records: list[SlideRecord] = []
     for idx, slide in enumerate(prs.slides, start=1):
-        title, raw_text = extract_text_from_slide(slide)
-        section = detect_section(title, raw_text)
-        key_phrases = extract_key_phrases(f"{title}\n{raw_text}")
-        slide_records.append(
-            SlideRecord(
-                source_file=str(pptx_path),
-                slide_index=idx,
-                title=title or f"Slide {idx}",
-                raw_text=raw_text,
-                section=section,
-                key_phrases=key_phrases,
+        try:
+            title, raw_text = extract_text_from_slide(slide)
+            section = detect_section(title, raw_text)
+            key_phrases = extract_key_phrases(f"{title}\n{raw_text}")
+            slide_records.append(
+                SlideRecord(
+                    source_file=str(pptx_path),
+                    slide_index=idx,
+                    title=title or f"Slide {idx}",
+                    raw_text=raw_text[:10000],
+                    section=section,
+                    key_phrases=key_phrases,
+                )
             )
-        )
+        except Exception:  # noqa: BLE001
+            # Continue parsing the deck even if one slide is malformed.
+            continue
     return slide_records

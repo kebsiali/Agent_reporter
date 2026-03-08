@@ -8,7 +8,8 @@
 4. `retrieval`: embedding/vector retrieval layer (FAISS + sentence-transformers).
 5. `chat`: session-based conversational interface with plan revision actions.
 6. `eval`: benchmark and quality metrics tooling.
-7. `storage` (placeholder): upcoming persistence for feedback/session memory.
+7. `storage`: persistence for feedback/session memory.
+8. `doctor`: environment and readiness checks for dependencies/indexes.
 
 ## Current Entry Points
 
@@ -17,6 +18,7 @@
 3. `python -m reporter_agent search`
 4. `python -m reporter_agent chat`
 5. `python -m reporter_agent benchmark`
+6. `python -m reporter_agent doctor`
 
 ## Configuration
 

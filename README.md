@@ -22,6 +22,7 @@ python -m reporter_agent index --source-dir "C:\path\to\old\reports" --kb-out da
 ```
 
 This also builds semantic index files in `data/index` by default.
+It also writes diagnostics to `data/index_diagnostics.json` (skipped files/reasons).
 For performance tuning on strong hardware:
 
 ```powershell
@@ -90,6 +91,21 @@ python -m reporter_agent benchmark `
   --report-type model_calibration `
   --out-json output\benchmark.json
 ```
+
+## 7) Environment doctor
+
+```powershell
+python -m reporter_agent doctor --kb data\knowledge_base.json --index-dir data\index
+```
+
+## 8) Build a release zip
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\build_release.ps1 -Version v0.1.0
+```
+
+Zip output:
+- `dist\reporter-agent-v0.1.0.zip`
 
 Optional logging:
 

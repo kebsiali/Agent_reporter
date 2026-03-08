@@ -33,3 +33,6 @@ def test_cli_has_index_and_plan_commands() -> None:
     )
     assert args.command == "benchmark"
     assert args.search_top_k == 5
+
+    args = parser.parse_args(["doctor"])
+    assert args.command == "doctor"

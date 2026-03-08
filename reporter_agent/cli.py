@@ -5,9 +5,15 @@ from pathlib import Path
 
 from .chat import handle_chat
 from .config import load_config
+from .doctor import run_doctor
 from .eval import run_benchmark, save_benchmark
 from .exporter import export_plan_json, export_plan_markdown, export_plan_pptx
-from .indexer import build_knowledge_base, load_knowledge_base, save_knowledge_base
+from .indexer import (
+    build_knowledge_base_with_diagnostics,
+    load_knowledge_base,
+    save_diagnostics,
+    save_knowledge_base,
+)
 from .logging_utils import configure_logging
 from .planner import build_report_plan
 from .retrieval import build_semantic_index, semantic_search
@@ -60,6 +66,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-embedding-cache",
         action="store_true",
         help="Disable local embedding cache during indexing",
+    )
+    p_index.add_argument(
+        "--diagnostics-out",
+        type=Path,
+        default=cfg.data_dir / "index_diagnostics.json",
+        help="Index diagnostics json path",
     )
 
     p_plan = sub.add_parser("plan", help="Generate new report plan from local KB")
@@ -153,6 +165,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_bench.add_argument("--semantic-top-k", type=int, default=4)
     p_bench.add_argument("--out-json", type=Path, default=cfg.output_dir / "benchmark.json")
+
+    p_doctor = sub.add_parser("doctor", help="Check environment and index readiness")
+    p_doctor.add_argument("--kb", type=Path, default=cfg.data_dir / "knowledge_base.json")
+    p_doctor.add_argument("--index-dir", type=Path, default=cfg.data_dir / "index")
     return parser
 
 
@@ -165,21 +181,29 @@ def cmd_index(
     batch_size: int,
     device: str | None,
     no_embedding_cache: bool,
+    diagnostics_out: Path,
 ) -> int:
-    kb = build_knowledge_base(source_dir)
+    kb, diagnostics = build_knowledge_base_with_diagnostics(source_dir)
     save_knowledge_base(kb, kb_out)
+    save_diagnostics(diagnostics, diagnostics_out)
     print(f"[OK] Indexed {len(kb.slides)} slides -> {kb_out}")
+    print(f"[OK] Diagnostics: {diagnostics_out}")
+    if diagnostics["files_skipped_count"] > 0:
+        print(f"[WARN] Skipped files: {diagnostics['files_skipped_count']}")
     if not skip_embeddings and kb.slides:
-        index_path, meta_path = build_semantic_index(
-            kb=kb,
-            index_dir=index_dir,
-            embedding_model=embedding_model,
-            batch_size=batch_size,
-            device=device,
-            use_embedding_cache=not no_embedding_cache,
-        )
-        print(f"[OK] Semantic index: {index_path}")
-        print(f"[OK] Semantic metadata: {meta_path}")
+        try:
+            index_path, meta_path = build_semantic_index(
+                kb=kb,
+                index_dir=index_dir,
+                embedding_model=embedding_model,
+                batch_size=batch_size,
+                device=device,
+                use_embedding_cache=not no_embedding_cache,
+            )
+            print(f"[OK] Semantic index: {index_path}")
+            print(f"[OK] Semantic metadata: {meta_path}")
+        except Exception as exc:  # noqa: BLE001
+            print(f"[WARN] Semantic index build failed: {exc}")
     return 0
 
 
@@ -225,7 +249,11 @@ def cmd_plan(
 
 
 def cmd_search(query: str, index_dir: Path, top_k: int, device: str | None) -> int:
-    hits = semantic_search(query=query, index_dir=index_dir, top_k=top_k, device=device)
+    try:
+        hits = semantic_search(query=query, index_dir=index_dir, top_k=top_k, device=device)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[WARN] Search failed: {exc}")
+        return 1
     if not hits:
         print("[INFO] No matches found.")
         return 0
@@ -248,15 +276,19 @@ def cmd_chat(
     report_type: str,
     semantic_top_k: int,
 ) -> int:
-    response, session_path = handle_chat(
-        sessions_dir=sessions_dir,
-        session_id=session_id,
-        kb_path=kb_path,
-        index_dir=index_dir,
-        message=message,
-        report_type=report_type,
-        semantic_top_k=semantic_top_k,
-    )
+    try:
+        response, session_path = handle_chat(
+            sessions_dir=sessions_dir,
+            session_id=session_id,
+            kb_path=kb_path,
+            index_dir=index_dir,
+            message=message,
+            report_type=report_type,
+            semantic_top_k=semantic_top_k,
+        )
+    except Exception as exc:  # noqa: BLE001
+        print(f"[WARN] Chat failed: {exc}")
+        return 1
     print(response)
     print(f"[OK] Session saved: {session_path}")
     return 0
@@ -273,22 +305,32 @@ def cmd_benchmark(
     semantic_top_k: int,
     out_json: Path,
 ) -> int:
-    result = run_benchmark(
-        kb_path=kb_path,
-        index_dir=index_dir,
-        search_query=query,
-        search_top_k=search_top_k,
-        task_name=task_name,
-        task_desc=task_desc,
-        report_type=report_type,
-        semantic_top_k=semantic_top_k,
-    )
+    try:
+        result = run_benchmark(
+            kb_path=kb_path,
+            index_dir=index_dir,
+            search_query=query,
+            search_top_k=search_top_k,
+            task_name=task_name,
+            task_desc=task_desc,
+            report_type=report_type,
+            semantic_top_k=semantic_top_k,
+        )
+    except Exception as exc:  # noqa: BLE001
+        print(f"[WARN] Benchmark failed: {exc}")
+        return 1
     save_benchmark(result, out_json)
     print(f"[OK] Benchmark saved: {out_json}")
     print(
         f"search={result.search_time_s:.4f}s | plan={result.plan_time_s:.4f}s | "
         f"total={result.total_time_s:.4f}s | slides={result.plan_slides}"
     )
+    return 0
+
+
+def cmd_doctor(kb_path: Path, index_dir: Path) -> int:
+    for line in run_doctor(kb_path=kb_path, index_dir=index_dir):
+        print(line)
     return 0
 
 
@@ -305,6 +347,7 @@ def main() -> int:
             batch_size=args.batch_size,
             device=args.device,
             no_embedding_cache=args.no_embedding_cache,
+            diagnostics_out=args.diagnostics_out,
         )
     if args.command == "plan":
         return cmd_plan(
@@ -342,6 +385,8 @@ def main() -> int:
             semantic_top_k=args.semantic_top_k,
             out_json=args.out_json,
         )
+    if args.command == "doctor":
+        return cmd_doctor(kb_path=args.kb, index_dir=args.index_dir)
     raise ValueError(f"Unknown command: {args.command}")
 
 
