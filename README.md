@@ -3,6 +3,26 @@
 Spec note:
 - GUI-first future scope is defined in `docs/GUI_PRODUCT_SPEC.md`.
 
+## GUI (Phase 6)
+
+Run local GUI:
+
+```powershell
+python -m reporter_agent gui --host 127.0.0.1 --port 8000
+```
+
+Open:
+- `http://127.0.0.1:8000`
+
+GUI supports:
+- drag/drop PPT ingestion
+- `Add PPT` button
+- `Show Ingested PPTs` button/panel
+- duplicate-ingest prevention (`Already Ingested`)
+- in-GUI chat
+- in-GUI plan generation + export paths
+- context file upload (pdf/json/csv/xlsx/images/etc.)
+
 A local Python CLI that:
 - Reads historical `.pptx` reports
 - Builds a reusable knowledge base from slide text

@@ -36,3 +36,7 @@ def test_cli_has_index_and_plan_commands() -> None:
 
     args = parser.parse_args(["doctor"])
     assert args.command == "doctor"
+
+    args = parser.parse_args(["gui", "--host", "127.0.0.1", "--port", "8010"])
+    assert args.command == "gui"
+    assert args.port == 8010

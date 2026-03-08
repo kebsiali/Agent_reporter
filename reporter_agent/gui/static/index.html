@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reporter Agent GUI</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Reporter Agent</h1>
+    <p>GUI-first local workflow</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Project</h2>
+      <label>Project ID</label>
+      <input id="projectId" value="default_project" />
+      <button id="loadIngestedBtn">Show Ingested PPTs</button>
+      <ul id="ingestedList"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Ingest PPTs</h2>
+      <div id="dropZone">Drop PPT/PPTX files here</div>
+      <input id="pptFiles" type="file" multiple accept=".ppt,.pptx" />
+      <button id="ingestBtn">Add PPT</button>
+      <pre id="ingestResult"></pre>
+    </section>
+
+    <section class="card">
+      <h2>Add Current Request Files</h2>
+      <input id="ctxFiles" type="file" multiple />
+      <button id="ctxUploadBtn">Upload Context Files</button>
+      <pre id="ctxResult"></pre>
+    </section>
+
+    <section class="card">
+      <h2>Plan Generation</h2>
+      <input id="taskName" placeholder="Task name" />
+      <textarea id="taskDesc" placeholder="Task description and available info"></textarea>
+      <select id="reportType">
+        <option value="simulation_request">simulation_request</option>
+        <option value="literature_review">literature_review</option>
+        <option value="model_calibration">model_calibration</option>
+        <option value="model_sensitivity_analysis">model_sensitivity_analysis</option>
+      </select>
+      <button id="generateBtn">Generate Report Draft</button>
+      <pre id="planResult"></pre>
+    </section>
+
+    <section class="card">
+      <h2>Chat</h2>
+      <div id="chatLog"></div>
+      <textarea id="chatInput" placeholder="Type message..."></textarea>
+      <button id="chatBtn">Send</button>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
+

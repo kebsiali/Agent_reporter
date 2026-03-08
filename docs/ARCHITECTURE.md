@@ -16,14 +16,15 @@ GUI requirement update:
 ## Runtime Layers
 
 1. `ingestion`: parse PPTX and build knowledge base records.
-2. `planning`: build task-specific report plans from indexed records.
-3. `export`: produce markdown/json/pptx outputs.
-4. `retrieval`: embedding/vector retrieval layer (FAISS + sentence-transformers).
-5. `chat`: session-based conversational interface with plan revision actions.
-6. `eval`: benchmark and quality metrics tooling.
-7. `storage`: persistence for feedback/session memory.
-8. `doctor`: environment and readiness checks for dependencies/indexes.
-9. `ingestion_registry`: persistent catalog of ingested files and dedup metadata.
+2. `gui`: FastAPI web UI with drag/drop ingestion, in-GUI chat, and plan generation.
+3. `planning`: build task-specific report plans from indexed records.
+4. `export`: produce markdown/json/pptx outputs.
+5. `retrieval`: embedding/vector retrieval layer (FAISS + sentence-transformers).
+6. `chat`: session-based conversational interface with plan revision actions.
+7. `eval`: benchmark and quality metrics tooling.
+8. `storage`: persistence for feedback/session memory.
+9. `doctor`: environment and readiness checks for dependencies/indexes.
+10. `ingestion_registry`: persistent catalog of ingested files and dedup metadata.
 
 ## Current Entry Points
 
@@ -33,6 +34,7 @@ GUI requirement update:
 4. `python -m reporter_agent chat`
 5. `python -m reporter_agent benchmark`
 6. `python -m reporter_agent doctor`
+7. `python -m reporter_agent gui`
 
 ## Configuration
 

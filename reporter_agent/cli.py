@@ -169,6 +169,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_doctor = sub.add_parser("doctor", help="Check environment and index readiness")
     p_doctor.add_argument("--kb", type=Path, default=cfg.data_dir / "knowledge_base.json")
     p_doctor.add_argument("--index-dir", type=Path, default=cfg.data_dir / "index")
+
+    p_gui = sub.add_parser("gui", help="Run local GUI server")
+    p_gui.add_argument("--host", default="127.0.0.1")
+    p_gui.add_argument("--port", type=int, default=8000)
+    p_gui.add_argument("--reload", action="store_true")
     return parser
 
 
@@ -334,6 +339,19 @@ def cmd_doctor(kb_path: Path, index_dir: Path) -> int:
     return 0
 
 
+def cmd_gui(host: str, port: int, reload: bool) -> int:
+    try:
+        from .gui import run_gui
+    except ModuleNotFoundError as exc:
+        print(
+            "[WARN] GUI dependencies missing. Install with: "
+            "python -m pip install fastapi uvicorn python-multipart"
+        )
+        raise SystemExit(1) from exc
+    run_gui(host=host, port=port, reload=reload)
+    return 0
+
+
 def main() -> int:
     args = build_parser().parse_args()
     configure_logging(args.log_level)
@@ -387,6 +405,8 @@ def main() -> int:
         )
     if args.command == "doctor":
         return cmd_doctor(kb_path=args.kb, index_dir=args.index_dir)
+    if args.command == "gui":
+        return cmd_gui(host=args.host, port=args.port, reload=args.reload)
     raise ValueError(f"Unknown command: {args.command}")
 
 
