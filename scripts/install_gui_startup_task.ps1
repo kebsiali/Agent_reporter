@@ -1,6 +1,6 @@
 param(
   [string]$TaskName = "ReporterAgentGUI",
-  [string]$Host = "127.0.0.1",
+  [string]$BindHost = "127.0.0.1",
   [int]$Port = 8000
 )
 
@@ -11,7 +11,7 @@ $startScript = Join-Path $repoRoot "scripts\start_gui.ps1"
 
 $action = New-ScheduledTaskAction `
   -Execute "powershell.exe" `
-  -Argument "-ExecutionPolicy Bypass -File `"$startScript`" -Host $Host -Port $Port"
+  -Argument "-ExecutionPolicy Bypass -File `"$startScript`" -BindHost $BindHost -Port $Port"
 
 $trigger = New-ScheduledTaskTrigger -AtLogOn
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 0)
@@ -25,4 +25,3 @@ Register-ScheduledTask `
   -Force | Out-Null
 
 Write-Host "[OK] Startup task '$TaskName' installed."
-

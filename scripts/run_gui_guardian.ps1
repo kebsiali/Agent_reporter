@@ -1,5 +1,5 @@
 param(
-  [string]$Host = "127.0.0.1",
+  [string]$BindHost = "127.0.0.1",
   [int]$Port = 8000,
   [int]$RestartDelaySeconds = 3
 )
@@ -12,7 +12,7 @@ if (-not (Test-Path $logDir)) {
   New-Item -ItemType Directory -Path $logDir | Out-Null
 }
 
-Write-Host "[INFO] GUI guardian started. Host=$Host Port=$Port"
+Write-Host "[INFO] GUI guardian started. Host=$BindHost Port=$Port"
 
 while ($true) {
   $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
@@ -21,7 +21,7 @@ while ($true) {
 
   Write-Host "[INFO] Starting GUI server at $timestamp ..."
   $proc = Start-Process python `
-    -ArgumentList "-m reporter_agent gui --host $Host --port $Port" `
+    -ArgumentList "-m reporter_agent gui --host $BindHost --port $Port" `
     -WorkingDirectory $repoRoot `
     -RedirectStandardOutput $stdoutLog `
     -RedirectStandardError $stderrLog `
@@ -32,4 +32,3 @@ while ($true) {
   Write-Host "[WARN] GUI process exited with code $code. Restarting in $RestartDelaySeconds seconds."
   Start-Sleep -Seconds $RestartDelaySeconds
 }
-

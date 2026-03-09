@@ -69,6 +69,33 @@ def _apply_profile_to_paragraph(paragraph, font_name: str | None, font_size_pt: 
         paragraph.font.size = Pt(font_size_pt)
 
 
+def _find_main_content_text_frame(slide, prs):
+    # Prefer explicit body/content placeholders with largest area.
+    candidates = []
+    for shape in slide.shapes:
+        if not getattr(shape, "has_text_frame", False):
+            continue
+        if shape == slide.shapes.title:
+            continue
+        if getattr(shape, "is_placeholder", False):
+            area = int(shape.width) * int(shape.height)
+            candidates.append((area, shape.text_frame))
+
+    if candidates:
+        candidates.sort(key=lambda x: x[0], reverse=True)
+        return candidates[0][1]
+
+    # Fallback: create a main body textbox inside slide canvas.
+    from pptx.util import Inches
+
+    left = Inches(0.7)
+    top = Inches(1.5)
+    width = prs.slide_width - Inches(1.4)
+    height = prs.slide_height - Inches(2.0)
+    box = slide.shapes.add_textbox(left, top, width, height)
+    return box.text_frame
+
+
 def export_plan_pptx(
     plan: ReportPlan,
     output_path: Path,
@@ -98,10 +125,14 @@ def export_plan_pptx(
         layout_idx = 1 if len(prs.slide_layouts) > 1 else 0
         slide_layout = prs.slide_layouts[layout_idx]
         slide = prs.slides.add_slide(slide_layout)
-        slide.shapes.title.text = f"{planned.slide_number}. {planned.title}"
-        if slide.shapes.title and slide.shapes.title.text_frame and slide.shapes.title.text_frame.paragraphs:
-            _apply_profile_to_paragraph(slide.shapes.title.text_frame.paragraphs[0], title_font_name, title_font_size)
-        body = slide.shapes.placeholders[1].text_frame
+        if slide.shapes.title:
+            slide.shapes.title.text = f"{planned.slide_number}. {planned.title}"
+            if slide.shapes.title.text_frame and slide.shapes.title.text_frame.paragraphs:
+                _apply_profile_to_paragraph(
+                    slide.shapes.title.text_frame.paragraphs[0], title_font_name, title_font_size
+                )
+
+        body = _find_main_content_text_frame(slide, prs)
         body.clear()
 
         p = body.paragraphs[0]
@@ -150,15 +181,14 @@ def export_plan_pptx(
             p.level = 1
             _apply_profile_to_paragraph(p, body_font_name, body_font_size)
 
-        left = Inches(0.5)
-        top = Inches(6.4)
-        width = Inches(12.3)
-        height = Inches(0.5)
-        text_box = slide.shapes.add_textbox(left, top, width, height)
-        text_box.text_frame.text = "Missing info guidance: " + "; ".join(
-            planned.missing_info_guidance
-        )
-        if text_box.text_frame.paragraphs:
-            _apply_profile_to_paragraph(text_box.text_frame.paragraphs[0], body_font_name, body_font_size)
+        p = body.add_paragraph()
+        p.text = "Missing info guidance:"
+        p.level = 0
+        _apply_profile_to_paragraph(p, body_font_name, body_font_size)
+        for g in planned.missing_info_guidance:
+            p = body.add_paragraph()
+            p.text = g
+            p.level = 1
+            _apply_profile_to_paragraph(p, body_font_name, body_font_size)
 
     prs.save(str(output_path))
